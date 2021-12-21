@@ -1,6 +1,32 @@
 package stream_processing
 
+// BatchSource a finite source of data for pipeline
+type BatchSource interface {
+	name() string
+}
 
+// StreamSource an infinite source of data for pipeline.
+type StreamSource interface {
+
+	// name return a descriptive name of this source
+	name() string
+
+	// supportNativeTimestamps return true if this source supports StreamSourceStage
+	supportNativeTimestamps() bool
+
+	// setPartitionIdleTimeout set a timeout after which idle partitions will be excluded from watermark coalescing. the source will advance the watermark based on events from other partitions and will ignore the idle paritions
+	// the default timeout is 60 secs
+	setPartitionIdleTimeout(timeout int64) StreamSource
+
+	// partitionIdleTimeout return the value set by setPartitionIdleTimeout
+	partitionIdleTimeout() int64
+}
+
+
+// Sink accepts the data the pipeline processed and exports it to an external system
+type Sink interface {
+	name() string
+}
 
 // Pipeline is a container of all the stages defined on a pipeline
 type Pipeline interface {
@@ -24,5 +50,7 @@ type Pipeline interface {
 
 	// isEmpty return true if there are no stages in the pipeline
 	isEmpty() bool
+}
 
+type ServiceFactory struct {
 }
