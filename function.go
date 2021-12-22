@@ -8,13 +8,13 @@ type FunctionEx interface {
 	apply(t interface{}) interface{}
 
 	// identity ...
-	identity() interface{}
+	identity() FunctionEx
 
 	// compose ...
-	compose(before FunctionEx) interface{}
+	compose(before FunctionEx) FunctionEx
 
 	// andThen ...
-	andThen(after FunctionEx) interface{}
+	andThen(after FunctionEx) FunctionEx
 }
 
 type PredicateEx interface {
@@ -92,5 +92,35 @@ type TriPredicate interface {
 
 	// or ...
 	or() TriPredicate
+}
 
+type ConsumerFn interface {
+	accept(t interface{}, value int)
+}
+
+type WholeItem struct {
+}
+
+func NewWholeItem() WholeItem {
+	return WholeItem{}
+}
+
+func (w WholeItem) applyEx(t interface{}) interface{} {
+	panic("implement me")
+}
+
+func (w WholeItem) apply(t interface{}) interface{} {
+	panic("implement me")
+}
+
+func (w WholeItem) identity() FunctionEx {
+	panic("implement me")
+}
+
+func (w WholeItem) compose(before FunctionEx) FunctionEx {
+	panic("implement me")
+}
+
+func (w WholeItem) andThen(after FunctionEx) FunctionEx {
+	panic("implement me")
 }

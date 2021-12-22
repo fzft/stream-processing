@@ -22,7 +22,6 @@ type StreamSource interface {
 	partitionIdleTimeout() int64
 }
 
-
 // Sink accepts the data the pipeline processed and exports it to an external system
 type Sink interface {
 	name() string
@@ -53,4 +52,75 @@ type Pipeline interface {
 }
 
 type ServiceFactory struct {
+}
+
+// PipelineImpl implementation of Pipeline
+type PipelineImpl struct {
+	adjacencyMap  map[Transform][]Transform
+	attachedFiles map[string]interface{}
+	preserveOrder bool
+}
+
+func (p PipelineImpl) create() Pipeline {
+	panic("implement me")
+}
+
+func (p PipelineImpl) isPreserveOrder() bool {
+	panic("implement me")
+}
+
+func (p PipelineImpl) setPreserveOrder(value bool) Pipeline {
+	panic("implement me")
+}
+
+func (p PipelineImpl) readFromBatchSource(source BatchSource) BatchStage {
+	panic("implement me")
+}
+
+func (p PipelineImpl) readFromStreamSource(source StreamSource) StreamSourceStage {
+	panic("implement me")
+}
+
+func (p PipelineImpl) writeTo(sink Sink, stages ...GeneralStage) SinkStage {
+	panic("implement me")
+}
+
+func (p PipelineImpl) isEmpty() bool {
+	panic("implement me")
+}
+
+type Planner struct {
+	xform2vertex map[Transform]PlannerVertex
+	pipeline     Pipeline
+}
+
+func NewPlanner(pipeline Pipeline) *Planner {
+	return &Planner{
+		xform2vertex: make(map[Transform]PlannerVertex),
+		pipeline:     pipeline,
+	}
+}
+
+func (p *Planner) addEdges(transform Transform, vertex Vertex, edgeFn ConsumerFn) {
+	//var destOrdinal int
+	//for _, fromTransform := range transform.getUpstream() {
+	//	fromPv := p.xform2vertex[fromTransform]
+	//	edge :=
+	//}
+}
+
+type PlannerVertex struct {
+	v                Vertex
+	availableOrdinal int
+}
+
+func NewPlannerVertex(v Vertex) *PlannerVertex {
+	return &PlannerVertex{
+		v: v,
+	}
+}
+
+func (v *PlannerVertex) nextAvailableOrdinal() int {
+	v.availableOrdinal++
+	return v.availableOrdinal
 }
