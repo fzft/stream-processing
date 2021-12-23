@@ -45,6 +45,18 @@ type NoopP struct {
 	outbox Outbox
 }
 
+func NewNoopP() *NoopP {
+	return &NoopP{}
+}
+
+func (n NoopP) getEx() interface{} {
+	panic("implement me")
+}
+
+func (n NoopP) get() interface{} {
+	panic("implement me")
+}
+
 func (n NoopP) isCooperative() bool {
 	return true
 }
@@ -66,7 +78,6 @@ type MetaSupplierFromProcessorSupplier struct {
 	processorSupplier         ProcessorSupplier
 }
 
-
 func NewMetaSupplierFromProcessorSupplier(preferredLocalParallelism int, processorSupplier ProcessorSupplier) *MetaSupplierFromProcessorSupplier {
 	return &MetaSupplierFromProcessorSupplier{preferredLocalParallelism: preferredLocalParallelism, processorSupplier: processorSupplier}
 }
@@ -86,4 +97,3 @@ func (m MetaSupplierFromProcessorSupplier) init(ctx context.Context) {
 func (m MetaSupplierFromProcessorSupplier) get(address []interface{}) FunctionEx {
 	panic("implement me")
 }
-

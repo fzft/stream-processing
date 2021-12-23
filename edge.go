@@ -83,6 +83,19 @@ func (e *Edge) allToOne(key interface{}) *Edge {
 	return e.partitioned(NewWholeItem(), NewSinglePartitioner(key))
 }
 
+// broadcast ...
+func (e *Edge) broadcast() *Edge {
+	e.routingPolicy = BROADCAST
+	return e
+}
+
+// unicast ...
+func (e *Edge) unicast() *Edge {
+	e.routingPolicy = UNICAST
+	return e
+}
+
+
 // Between return an edge between two vertices. the ordinal of the edge is 0 at both ends
 func Between(source, destination *Vertex) *Edge {
 	return NewEdge(source, destination, 0, 0)

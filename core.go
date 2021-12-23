@@ -38,8 +38,9 @@ type Vertex struct {
 
 func NewVertex(name string, processorSupplier ProcessorSupplier) *Vertex {
 	return &Vertex{
-		name:         name,
-		metaSupplier: NewMetaSupplierFromProcessorSupplier(LOCAL_PARALLELISM_USE_DEFAULT, processorSupplier),
+		localParallelism: -1,
+		name:             name,
+		metaSupplier:     NewMetaSupplierFromProcessorSupplier(LOCAL_PARALLELISM_USE_DEFAULT, processorSupplier),
 	}
 }
 

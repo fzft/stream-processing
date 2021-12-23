@@ -18,12 +18,24 @@ type DefaultPartitionStrategy interface {
 	getPartition(o interface{}) int
 }
 
+
+type DefaultPartitionStrategyImpl struct {
+}
+
+func (d DefaultPartitionStrategyImpl) getPartition(o interface{}) int {
+	if v, ok := o.(int); ok {
+		return v
+	}
+	return 0
+}
+
 type DefaultPartitioner struct {
 	defaultPartitioning DefaultPartitionStrategy
 }
 
 func NewDefaultPartitioner() *DefaultPartitioner {
-	return &DefaultPartitioner{}
+	p := new(DefaultPartitioner)
+	return p
 }
 
 func (d *DefaultPartitioner) init(defaultPartitioning DefaultPartitionStrategy) {
@@ -51,7 +63,7 @@ func (k *KeyPartitioner) getPartition(item interface{}, partitionCount int) int 
 	if key == nil {
 		panic("Null key from key extractor")
 	}
-	return k.partitioner.getPartition(item, partitionCount)
+	return k.partitioner.getPartition(key, partitionCount)
 }
 
 type SinglePartitioner struct {
@@ -70,3 +82,26 @@ func (s *SinglePartitioner) getPartition(item interface{}, partitionCount int) i
 func (s *SinglePartitioner) init(strat DefaultPartitionStrategy) {
 	s.partition = strat.getPartition(s.key)
 }
+
+type TestPartitioner struct {
+	val int
+}
+
+func NewTestPartitioner(val int) *TestPartitioner {
+	return &TestPartitioner{val: val}
+}
+
+func (t *TestPartitioner) getPartition(item interface{}, partitionCount int) int {
+	return t.val
+}
+
+func (t *TestPartitioner) init(strat DefaultPartitionStrategy) {
+	panic("implement me")
+}
+
+
+
+
+
+
+

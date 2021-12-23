@@ -1,20 +1,8 @@
 package stream_processing
 
 type FunctionEx interface {
-	// applyEx ...
-	applyEx(t interface{}) interface{}
-
 	// apply ...
 	apply(t interface{}) interface{}
-
-	// identity ...
-	identity() FunctionEx
-
-	// compose ...
-	compose(before FunctionEx) FunctionEx
-
-	// andThen ...
-	andThen(after FunctionEx) FunctionEx
 }
 
 type PredicateEx interface {
@@ -105,22 +93,21 @@ func NewWholeItem() WholeItem {
 	return WholeItem{}
 }
 
-func (w WholeItem) applyEx(t interface{}) interface{} {
-	panic("implement me")
-}
-
 func (w WholeItem) apply(t interface{}) interface{} {
-	panic("implement me")
+	return t
 }
 
-func (w WholeItem) identity() FunctionEx {
-	panic("implement me")
+type ConstantItem struct {
+	constItem interface{}
 }
 
-func (w WholeItem) compose(before FunctionEx) FunctionEx {
-	panic("implement me")
+func NewConstantItem(constItem interface{}) *ConstantItem {
+	return &ConstantItem{constItem: constItem}
 }
 
-func (w WholeItem) andThen(after FunctionEx) FunctionEx {
-	panic("implement me")
+func (c ConstantItem) apply(t interface{}) interface{} {
+	return c.constItem
 }
+
+
+

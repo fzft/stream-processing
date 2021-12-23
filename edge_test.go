@@ -52,5 +52,39 @@ func TestEdge_whenPartitionedByKey_thenPartitionerExtractsKey(t *testing.T) {
 	e := From(et.a, 0)
 	partitioningKey := 42
 
-	e.partitioned()
+	e.partitioned(NewConstantItem(partitioningKey), NewDefaultPartitioner())
+	partitioner := e.partitioner
+	assert.NotNil(t, partitioner)
+	partitioner.init(DefaultPartitionStrategyImpl{})
+
+	assert.Equal(t, PARTITIONED, e.routingPolicy)
+	assert.Equal(t, partitioningKey, partitioner.getPartition(13, 0))
+}
+
+func TestEdge_whenPartitionedByCustom_thenCustomPartitioned(t *testing.T) {
+	teardownTest, et := EdgeTestSetup(t)
+	defer teardownTest(t)
+	e := From(et.a, 0)
+	partitioningKey := 42
+
+	e.partitioned(NewWholeItem(), NewTestPartitioner(partitioningKey))
+	partitioner := e.partitioner
+	assert.NotNil(t, partitioner)
+
+	assert.Equal(t, PARTITIONED, e.routingPolicy)
+	assert.Equal(t, partitioningKey, partitioner.getPartition(13, 0))
+}
+
+func TestEdge_whenAllToOne_thenAlwaysSamePartition(t *testing.T) {
+	teardownTest, et := EdgeTestSetup(t)
+	defer teardownTest(t)
+	e := From(et.a, 0)
+	mockPartitionCount := 100
+
+	e.allToOne("key")
+	partitioner := e.partitioner
+	assert.NotNil(t, partitioner)
+
+	assert.Equal(t, PARTITIONED, e.routingPolicy)
+	assert.Equal(t, partitioner.getPartition(17, mockPartitionCount), partitioner.getPartition(13, mockPartitionCount))
 }
