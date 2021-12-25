@@ -1,5 +1,10 @@
 package stream_processing
 
+import (
+	"fmt"
+	"strings"
+)
+
 // RoutingPolicy decides where exactly to route each particular item emit from an upstream processor
 type RoutingPolicy int
 
@@ -95,6 +100,34 @@ func (e *Edge) unicast() *Edge {
 	return e
 }
 
+// toString
+func (e *Edge) toString() string {
+	var builder strings.Builder
+	if e.sourceOrdinal == 0 && e.destOrdinal == 0 {
+		builder.WriteString("between(\"")
+		builder.WriteString(e.sourceName)
+		builder.WriteString("\",\"")
+		builder.WriteString(e.destName)
+		builder.WriteString("\")")
+	} else {
+		builder.WriteString("from(\"")
+		builder.WriteString(e.sourceName)
+		builder.WriteString("\"\"")
+		if e.sourceOrdinal != 0 {
+			builder.WriteString(", ")
+			builder.WriteString(fmt.Sprintf("%d", e.sourceOrdinal))
+		}
+		builder.WriteString(").to(\"")
+		builder.WriteString(e.destName)
+		builder.WriteString("\"\"")
+		if e.destOrdinal != 0 {
+			builder.WriteString(", ")
+			builder.WriteString(fmt.Sprintf("%d", e.destOrdinal))
+		}
+		builder.WriteString(")")
+	}
+	return builder.String()
+}
 
 // Between return an edge between two vertices. the ordinal of the edge is 0 at both ends
 func Between(source, destination *Vertex) *Edge {

@@ -115,8 +115,33 @@ func TestDAG_when_iterator_then_topologicalOrder(t *testing.T) {
 		edge(From(d, 0).To(e, 1)).
 		edge(Between(e, f))
 
+	sorted := dag.iterator()
 
+	// assert that for every edge x -> y , x is before y in the ordering
+	assert.True(t, findVertexPos(sorted, a) < findVertexPos(sorted, b))
+	assert.True(t, findVertexPos(sorted, b) < findVertexPos(sorted, e))
+	assert.True(t, findVertexPos(sorted, c) < findVertexPos(sorted, d))
+	assert.True(t, findVertexPos(sorted, d) < findVertexPos(sorted, e))
+	assert.True(t, findVertexPos(sorted, e) < findVertexPos(sorted, f))
 
-	edges := dag.getOutboundEdges("a")
-	assert.Equal(t, []interface{}{e1, e2, e3}, edges)
+}
+
+func TestDAG_when_multigraph_then_valid(t *testing.T) {
+	teardownTest, dt := DAGTestSetup(t)
+	defer teardownTest(t)
+	dag := NewDAG()
+	a := dag.newVertex("a", dt.PROCESSOR_SUPPLIER)
+	b := dag.newVertex("b", dt.PROCESSOR_SUPPLIER)
+
+	dag.edge(From(a, 0).To(b, 0))
+	dag.edge(From(a, 1).To(b, 1))
+}
+
+func findVertexPos(vertices []*Vertex, vertex *Vertex) int {
+	for i, v := range vertices {
+		if v == vertex {
+			return i
+		}
+	}
+	return -1
 }

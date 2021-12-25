@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/emirpasic/gods/sets/hashset"
 	"github.com/emirpasic/gods/sets/linkedhashset"
+	"strings"
 )
 
 // DAG describes a computation to be performed by the computation engine.
@@ -109,16 +110,11 @@ func (d *DAG) uniqueName(prefix string) string {
 }
 
 // iterator return iterable over vertices in topological order
-func (d *DAG) iterator() {
+func (d *DAG) iterator() []*Vertex {
 	adjacencyMap := make(map[*Vertex][]*Vertex)
 	for _, v := range d.edges.Values() {
-		edge, ok := v.(*Edge)
-		if !ok {
-			adjacencyMap[edge.source] = []*Vertex{}
-		}
-		if vs, ok := adjacencyMap[edge.source]; ok {
-			adjacencyMap[edge.source] = append(vs, edge.destination)
-		}
+		edge, _ := v.(*Edge)
+		adjacencyMap[edge.source] = append(adjacencyMap[edge.source], edge.destination)
 	}
 
 	for _, v := range d.nameToVertex {
@@ -127,6 +123,7 @@ func (d *DAG) iterator() {
 		}
 	}
 
+	return TopologicalSort(adjacencyMap)
 
 }
 
@@ -160,6 +157,23 @@ func (d *DAG) getInboundEdges(vertexName string) []interface{} {
 		}
 	}
 	return inboundEdges
+}
+
+// toString return a string representation of DAG
+func (d *DAG) toString(defaultLocalParallelism int) string {
+	var builder strings.Builder
+	for _, v := range d.iterator() {
+		builder.WriteString("     .vertex(\"")
+		builder.WriteString(v.name)
+		builder.WriteString("\")")
+		builder.WriteString("\n")
+	}
+	for _, v := range d.edges.Values() {
+		builder.WriteString("     .edge(")
+		builder.WriteString(v.(*Edge).toString())
+		builder.WriteString(")\n")
+	}
+	return builder.String()
 }
 
 // getOutboundEdges Returns the outbound edges connected to the vertex with the given name.

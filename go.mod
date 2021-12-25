@@ -3,6 +3,7 @@ module github.com/fzft/stream-processing
 go 1.17
 
 require (
+	github.com/ef-ds/deque v1.0.4
 	github.com/emirpasic/gods v1.12.0
 	github.com/stretchr/testify v1.7.0
 )
