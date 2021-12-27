@@ -61,6 +61,10 @@ type BiPredicateEx interface {
 	or(o BiPredicateEx) BiPredicateEx
 }
 
+type ObjLongBiFunction interface {
+	apply(t interface{}, u int64) interface{}
+}
+
 // TriFunction represents a three-arity function that accepts three arguments and produces a result
 type TriFunction interface {
 	applyEx(t0, t1, t2 interface{}) interface{}
@@ -108,6 +112,3 @@ func NewConstantItem(constItem interface{}) *ConstantItem {
 func (c ConstantItem) apply(t interface{}) interface{} {
 	return c.constItem
 }
-
-
-

@@ -44,10 +44,6 @@ func NewVertex(name string, processorSupplier ProcessorSupplier) *Vertex {
 	}
 }
 
-// Watermark ...
-type Watermark struct {
-}
-
 // Sources contains factory methods for various types of pipeline sources
 type Sources struct {
 }
