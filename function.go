@@ -31,8 +31,6 @@ type PredicateEx interface {
 // SupplierEx ...
 type SupplierEx interface {
 
-	// getEx ...
-	getEx() interface{}
 	// get ...
 	get() interface{}
 }
@@ -49,6 +47,10 @@ type ToLongFunctionEx interface {
 	applyAsLongEx(t interface{}) int64
 
 	apply(t interface{}) int64
+}
+
+type ToLongFunction interface {
+	applyAsLong(value interface{}) int64
 }
 
 type BiPredicateEx interface {
@@ -112,3 +114,25 @@ func NewConstantItem(constItem interface{}) *ConstantItem {
 func (c ConstantItem) apply(t interface{}) interface{} {
 	return c.constItem
 }
+
+type longValueFunc struct{
+}
+
+func (f longValueFunc) applyAsLong(value interface{}) int64 {
+	if v, ok := value.(int64); ok {
+		return v
+	}
+	return 0
+}
+
+type noWrapping struct {
+	
+}
+
+func (n noWrapping) apply(t interface{}, u int64) interface{} {
+	return t
+}
+
+
+
+

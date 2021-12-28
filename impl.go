@@ -103,6 +103,7 @@ func TopologicalSort(adjacencyMap map[*Vertex][]*Vertex) []*Vertex {
 	// dedecorate all the vertices with Tarjan vertices, which hold the metadata needed by the algorithm
 	tarjanAdjacencyMap := make(map[*TarjanVertex][]*TarjanVertex)
 
+	// insure the TarjanVertex Pointer in keyset and valueset is the same if there have same vertex name
 	vMap := make(map[string]*TarjanVertex)
 	var newK *TarjanVertex
 	var newVV *TarjanVertex

@@ -49,10 +49,6 @@ func NewNoopP() *NoopP {
 	return &NoopP{}
 }
 
-func (n NoopP) getEx() interface{} {
-	panic("implement me")
-}
-
 func (n NoopP) get() interface{} {
 	panic("implement me")
 }
