@@ -1,5 +1,7 @@
 package stream_processing
 
+import "time"
+
 // EventTimePolicy a holder of functions and parameters needs to handle event time and the associated watermark.
 // this class should be used EventTimeMapper when implementing a source processor
 type EventTimePolicy struct {
@@ -54,7 +56,7 @@ type EventTimeMapper struct {
 // NewEventTimeMapper ...
 func NewEventTimeMapper(eventTimePolicy EventTimePolicy) *EventTimeMapper {
 	m := new(EventTimeMapper)
-	m.idleTimeoutNanos = eventTimePolicy.idleTimeoutMillis
+	m.idleTimeoutNanos = time.UnixMilli(eventTimePolicy.idleTimeoutMillis).UnixNano()
 	m.timestampFn = eventTimePolicy.timestampFn
 	m.wrapFn = eventTimePolicy.wrapFn
 	m.newWmPolicyFn = eventTimePolicy.newWmPolicyFn
@@ -63,6 +65,11 @@ func NewEventTimeMapper(eventTimePolicy EventTimePolicy) *EventTimeMapper {
 		m.watermarkThrottlingFrame = NewTumblingWithPolicy(eventTimePolicy.watermarkThrottlingFrameSize).withOffset(eventTimePolicy.watermarkThrottlingFrameOffset)
 	}
 	return m
+}
+
+// flatMapIdle call this method when there is no event to emit
+func (m *EventTimeMapper) flatMapIdle() Traverser {
+	return m.flatMapEvent(time.Now().UnixNano(), nil, -1, Min_Value)
 }
 
 // flatMapEvent flat-map the given event by possibly prepending it with a watermark
@@ -100,6 +107,7 @@ func (m *EventTimeMapper) handleNoEventInternal(now int64, maxWmValue int64) {
 		}
 		// the new watermark must not be less than the previous watermark and not more than maxWmValue
 		m.watermarks[i] = Max64(m.watermarks[i], Min64(m.wmPolicies[i].getCurrentWatermark(), maxWmValue))
+		m.topObservedWm = Max64(m.topObservedWm, m.watermarks[i])
 		min = Min64(min, m.watermarks[i])
 	}
 
@@ -148,16 +156,16 @@ func (m *EventTimeMapper) addPartitions(now int64, addedCount int) {
 
 // removePartition removes a partition that will no longer have events. If we were waiting for a watermark from it, the returned traverser might contain a watermark to emit
 // can not use arrayRemove cause no Generic !!!
-func (m *EventTimeMapper) removePartition(now int64, partitionIndex int) Traverser {
-	m.wmPolicies[partitionIndex+1] = m.wmPolicies[len(m.wmPolicies)-1]
+func (m *EventTimeMapper) removePartition(now int64, i int) Traverser {
+	copy(m.wmPolicies[i:], m.wmPolicies[i+1:])
 	m.wmPolicies[len(m.wmPolicies)-1] = nil
 	m.wmPolicies = m.wmPolicies[:len(m.wmPolicies)-1]
 
-	m.watermarks[partitionIndex+1] = m.watermarks[len(m.watermarks)-1]
+	copy(m.watermarks[i:], m.watermarks[i+1:])
 	m.watermarks[len(m.watermarks)-1] = 0
 	m.watermarks = m.watermarks[:len(m.watermarks)-1]
 
-	m.markIdleAt[partitionIndex+1] = m.markIdleAt[len(m.markIdleAt)-1]
+	copy(m.markIdleAt[i:], m.markIdleAt[i+1:])
 	m.markIdleAt[len(m.markIdleAt)-1] = 0
 	m.markIdleAt = m.markIdleAt[:len(m.markIdleAt)-1]
 
@@ -168,6 +176,15 @@ func (m *EventTimeMapper) removePartition(now int64, partitionIndex int) Travers
 // partitionCount return the current parition count
 func (m *EventTimeMapper) partitionCount() int {
 	return len(m.wmPolicies)
+}
+
+// restoreWatermark watermark value from state snapshot
+func (m *EventTimeMapper) restoreWatermark(partitionIndex int, wm int64) {
+	m.watermarks[partitionIndex] = wm
+	m.lastEmittedWm = Max_Value
+	for _, watermark := range m.watermarks {
+		m.lastEmittedWm = Min64(watermark, m.lastEmittedWm)
+	}
 }
 
 func arrayRemove(slices []interface{}, index int) []interface{} {

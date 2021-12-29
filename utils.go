@@ -1,6 +1,9 @@
 package stream_processing
 
-import "math"
+import (
+	"math"
+	"time"
+)
 
 const (
 	Max_Value = int64(math.MaxInt64)
@@ -95,4 +98,8 @@ func floorDiv(x int64, y int64) int64 {
 		r--
 	}
 	return r
+}
+
+func MillsToNanos(timestamp int64) int64 {
+	return time.Unix(timestamp, 0).UnixNano()
 }
