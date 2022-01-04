@@ -7,13 +7,13 @@ import "time"
 type EventTimePolicy struct {
 	DEFAULT_IDLE_TIMEOUT int64
 	// timestampFn extracts the timestamp from an event in the stream
-	timestampFn ToLongFunction
+	timestampFn ApplyAsLongFn
 
 	// newWmPolicyFn a factory of watermark policy objects
-	newWmPolicyFn SupplierEx
+	newWmPolicyFn GetFn
 
 	// wrapFn a function that transforms a given event and its timestamp into the item to emit from the processor
-	wrapFn ObjLongBiFunction
+	wrapFn ObjLongBiApplyFn
 
 	// idleTimeoutMillis ...
 	idleTimeoutMillis int64
@@ -25,12 +25,14 @@ type EventTimePolicy struct {
 	watermarkThrottlingFrameOffset int64
 }
 
-func NewEventTimePolicy(timestampFn ToLongFunction, newWmPolicyFn SupplierEx, wrapFn ObjLongBiFunction, idleTimeoutMillis int64, watermarkThrottlingFrameSize int64, watermarkThrottlingFrameOffset int64) EventTimePolicy {
+func NewEventTimePolicy(timestampFn ApplyAsLongFn, newWmPolicyFn GetFn, wrapFn ObjLongBiApplyFn, idleTimeoutMillis int64, watermarkThrottlingFrameSize int64, watermarkThrottlingFrameOffset int64) EventTimePolicy {
 	return EventTimePolicy{timestampFn: timestampFn, newWmPolicyFn: newWmPolicyFn, wrapFn: wrapFn, idleTimeoutMillis: idleTimeoutMillis, watermarkThrottlingFrameSize: watermarkThrottlingFrameSize, watermarkThrottlingFrameOffset: watermarkThrottlingFrameOffset}
 }
 
-func NewEventTimePolicyNoWrapping(timestampFn ToLongFunction, newWmPolicyFn SupplierEx, idleTimeoutMillis int64, watermarkThrottlingFrameSize int64, watermarkThrottlingFrameOffset int64) EventTimePolicy {
-	return EventTimePolicy{timestampFn: timestampFn, newWmPolicyFn: newWmPolicyFn, wrapFn: noWrapping{}, idleTimeoutMillis: idleTimeoutMillis, watermarkThrottlingFrameSize: watermarkThrottlingFrameSize, watermarkThrottlingFrameOffset: watermarkThrottlingFrameOffset}
+func NewEventTimePolicyNoWrapping(timestampFn ApplyAsLongFn, newWmPolicyFn GetFn, idleTimeoutMillis int64, watermarkThrottlingFrameSize int64, watermarkThrottlingFrameOffset int64) EventTimePolicy {
+	return EventTimePolicy{timestampFn: timestampFn, newWmPolicyFn: newWmPolicyFn, wrapFn: func(t interface{}, u int64) interface{} {
+		return t
+	}, idleTimeoutMillis: idleTimeoutMillis, watermarkThrottlingFrameSize: watermarkThrottlingFrameSize, watermarkThrottlingFrameOffset: watermarkThrottlingFrameOffset}
 }
 
 // EventTimeMapper a utility that helps a source emit events according to a given EventTimePolicy. Generally this struct should be used if a source needs emit Watermark
@@ -39,9 +41,9 @@ type EventTimeMapper struct {
 	EMPTY_LONGS    []int64
 
 	idleTimeoutNanos int64
-	timestampFn      ToLongFunction
-	newWmPolicyFn    SupplierEx
-	wrapFn           ObjLongBiFunction
+	timestampFn      ApplyAsLongFn
+	newWmPolicyFn    GetFn
+	wrapFn           ObjLongBiApplyFn
 
 	watermarkThrottlingFrame *SlidingWindowPolicy
 	wmPolicies               []WatermarkPolicy
@@ -81,7 +83,7 @@ func (m *EventTimeMapper) flatMapEvent(now int64, event interface{}, partitionIn
 
 	var eventTime int64
 	if m.timestampFn != nil {
-		eventTime = m.timestampFn.applyAsLong(event)
+		eventTime = m.timestampFn(event)
 	} else {
 		eventTime = nativeEventTime
 		if eventTime == m.NO_NATIVE_TIME {
@@ -89,7 +91,7 @@ func (m *EventTimeMapper) flatMapEvent(now int64, event interface{}, partitionIn
 		}
 	}
 	m.handleEventInternal(now, partitionIndex, eventTime)
-	return m.traverser.append(m.wrapFn.apply(event, eventTime))
+	return m.traverser.append(m.wrapFn(event, eventTime))
 }
 
 func (m *EventTimeMapper) handleEventInternal(now int64, partitionIndex int, eventTime int64) {
@@ -148,7 +150,7 @@ func (m *EventTimeMapper) addPartitions(now int64, addedCount int) {
 	newPartitionCount := oldPartitionCount + addedCount
 
 	for i := oldPartitionCount; i < newPartitionCount; i++ {
-		m.wmPolicies = append(m.wmPolicies, m.newWmPolicyFn.get().(WatermarkPolicy))
+		m.wmPolicies = append(m.wmPolicies, m.newWmPolicyFn().(WatermarkPolicy))
 		m.watermarks = append(m.watermarks, Min_Value)
 		m.markIdleAt = append(m.markIdleAt, now+m.idleTimeoutNanos)
 	}

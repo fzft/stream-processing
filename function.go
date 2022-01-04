@@ -1,138 +1,23 @@
 package stream_processing
 
-type FunctionEx interface {
-	// apply ...
-	apply(t interface{}) interface{}
-}
+type ApplyFn func(t interface{}) interface{}
 
-type PredicateEx interface {
-	// test ...
-	test() bool
+type AcceptFn func(t interface{})
 
-	// alwaysTrue ...
-	alwaysTrue() PredicateEx
+type BiAcceptFn func(t, u interface{})
 
-	// alwaysFalse ...
-	alwaysFalse() PredicateEx
+type TestFn func(t interface{}) bool
 
-	// isEqual ...
-	isEqual(o interface{}) PredicateEx
+type GetFn func() interface{}
 
-	// and ...
-	and(o interface{}) PredicateEx
+type BiApplyFn func(t, u interface{}) interface{}
 
-	// negate ...
-	negate(o interface{}) PredicateEx
+type ApplyAsLongFn func(t interface{}) int64
 
-	// or ...
-	or(o interface{}) PredicateEx
-}
+type BiTest func(t, u interface{}) bool
 
-// SupplierEx ...
-type SupplierEx interface {
+type ObjLongBiApplyFn func(t interface{}, u int64) interface{}
 
-	// get ...
-	get() interface{}
-}
+type TriApplyFn func(t0, t1, t2 interface{}) interface{}
 
-type BiFunctionEx interface {
-	applyEx(t, u interface{}) interface{}
-
-	apply(t interface{}) interface{}
-
-	andThen(after FunctionEx) BiFunctionEx
-}
-
-type ToLongFunctionEx interface {
-	applyAsLongEx(t interface{}) int64
-
-	apply(t interface{}) int64
-}
-
-type ToLongFunction interface {
-	applyAsLong(value interface{}) int64
-}
-
-type BiPredicateEx interface {
-	testEx(var1, var2 interface{}) bool
-
-	and(other BiPredicateEx) BiPredicateEx
-
-	negate() BiPredicateEx
-
-	or(o BiPredicateEx) BiPredicateEx
-}
-
-type ObjLongBiFunction interface {
-	apply(t interface{}, u int64) interface{}
-}
-
-// TriFunction represents a three-arity function that accepts three arguments and produces a result
-type TriFunction interface {
-	applyEx(t0, t1, t2 interface{}) interface{}
-
-	apply(t0, t1, t2 interface{}) interface{}
-}
-
-// TriPredicate a predicate which accepts three arguments
-type TriPredicate interface {
-	testEx(t0, t1, t2 interface{}) bool
-
-	// and returns a composite predicate which evaluates the equivalent
-	and(other TriPredicate) TriPredicate
-
-	// negate ...
-	negate() TriPredicate
-
-	// or ...
-	or() TriPredicate
-}
-
-type ConsumerFn interface {
-	accept(t interface{}, value int)
-}
-
-type WholeItem struct {
-}
-
-func NewWholeItem() WholeItem {
-	return WholeItem{}
-}
-
-func (w WholeItem) apply(t interface{}) interface{} {
-	return t
-}
-
-type ConstantItem struct {
-	constItem interface{}
-}
-
-func NewConstantItem(constItem interface{}) *ConstantItem {
-	return &ConstantItem{constItem: constItem}
-}
-
-func (c ConstantItem) apply(t interface{}) interface{} {
-	return c.constItem
-}
-
-type longValueFunc struct{
-}
-
-func (f longValueFunc) applyAsLong(value interface{}) int64 {
-	if v, ok := value.(int64); ok {
-		return v
-	}
-	return 0
-}
-
-type noWrapping struct {
-	
-}
-
-func (n noWrapping) apply(t interface{}, u int64) interface{} {
-	return t
-}
-
-
-
-
+type TriTestFn func(t0, t1, t2 interface{}) bool

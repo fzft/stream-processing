@@ -4,30 +4,30 @@ package stream_processing
 type GeneralStageWithKey interface {
 
 	// keyFn returns the function that extracts the key from stream items. The purpose of the key varies with the operation you apply
-	keyFn() FunctionEx
+	keyFn() ApplyFn
 
 	// mapStateful attaches a stage that performs a stateful mapping function. returns the object that hold the state
-	mapStateful(createFn SupplierEx, mapFn TriFunction) GeneralStage
+	mapStateful(createFn GetFn, mapFn TriApplyFn) GeneralStage
 
 	// filterStateful attaches a stage that performs a stateful filtering operation. returns the object that holds the state
-	filterStateful(createFn SupplierEx, filterFn BiPredicateEx) GeneralStage
+	filterStateful(createFn GetFn, filterFn BiTest) GeneralStage
 
 	// flatMapStateful attaches a stage that performs a stateful flat-mapping operation. returns the object that holds the state
-	flatMapStateful(createFn SupplierEx, flatMapFn TriFunction) GeneralStage
+	flatMapStateful(createFn GetFn, flatMapFn TriApplyFn) GeneralStage
 
 	// mapUsingService attaches a mapping stage which applies the given function to each input item independently and emits the function's result as the output item
-	mapUsingService(serviceFactory ServiceFactory, mapFn TriFunction) GeneralStage
+	mapUsingService(serviceFactory ServiceFactory, mapFn TriApplyFn) GeneralStage
 
 	// mapUsingServiceAsync asynchronous version of mapUsingService
-	mapUsingServiceAsync(serviceFactory ServiceFactory, maxConcurrentOps int, preserveOrder bool, mapAsyncFn TriFunction)
+	mapUsingServiceAsync(serviceFactory ServiceFactory, maxConcurrentOps int, preserveOrder bool, mapAsyncFn TriApplyFn)
 
 	// filterUsingService attaches a filtering stage which applies the provided predicate function
 	// to each input item to decide whether to pass the item to the output or
 	// to discard it.
-	filterUsingService(serviceFactory ServiceFactory, filterFn TriPredicate) GeneralStage
+	filterUsingService(serviceFactory ServiceFactory, filterFn TriTestFn) GeneralStage
 
 	// customTransform attaches a stage with a custom transform based on the provided supplier of core api
-	customTransform(stageName string, procSupplier SupplierEx) GeneralStage
+	customTransform(stageName string, procSupplier GetFn) GeneralStage
 }
 
 
@@ -53,7 +53,7 @@ type StreamStageWithKey interface {
 type StageWithKeyAndWindow interface {
 
 	// keyFn returns the function that extracts the grouping key from stream items
-	keyFn() FunctionEx
+	keyFn() ApplyFn
 
 	windowDefinition() WindowDefinition
 

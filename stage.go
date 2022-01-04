@@ -20,48 +20,48 @@ type GeneralStage interface {
 	Stage
 
 	// mapX attaches a mapping stage which applies the given function to each input item in dependently and emits the function's result as the output item
-	mapX(mapFn FunctionEx) GeneralStage
+	mapX(mapFn ApplyFn) GeneralStage
 
 	// filter attaches a filtering stage which applies the provided predicate function to each input item to decide whether to pass the item to output or to discard it
-	filter(filterFn PredicateEx) GeneralStage
+	filter(filterFn TestFn) GeneralStage
 
 	// flatMap attaches a flat-mapping stage which applies the supplied function to each input item dependently and emits all the items from the Traverser it returns
 	// sample:
 	// stage.flatMap(sentence -> traverseArray(sentence.split("\\w+")))
-	flatMap(flatMapFn FunctionEx) GeneralStage
+	flatMap(flatMapFn ApplyFn) GeneralStage
 
 	// mapStateful attaches a stage that performs a stateful mapping operation, return the object that holds the state
-	mapStateful(createFn SupplierEx, mapFn BiFunctionEx) GeneralStage
+	mapStateful(createFn GetFn, mapFn BiApplyFn) GeneralStage
 
 	// filterStateful attaches a stage that performs a stateful filtering operation, return the object that holds the state
-	filterStateful(createFn SupplierEx, filterFn BiFunctionEx) GeneralStage
+	filterStateful(createFn GetFn, filterFn BiApplyFn) GeneralStage
 
 	// flatMapStateful attaches a stage that performs a stateful flat-mapping operation, return the object that holds the state
-	flatMapStateful(createFn SupplierEx, flatMapFn BiFunctionEx) GeneralStage
+	flatMapStateful(createFn GetFn, flatMapFn BiApplyFn) GeneralStage
 
 	// mapUsingService attaches a mapping stage which applies the supplies function to each input item independently and emits the function's result as the output item
-	mapUsingService(serviceFactory ServiceFactory, mapFn BiFunctionEx) GeneralStage
+	mapUsingService(serviceFactory ServiceFactory, mapFn BiApplyFn) GeneralStage
 
 	// mapUsingServiceAsync asynchronous version of mapUsingService
-	mapUsingServiceAsync(serviceFactory ServiceFactory, maxConcurrentOps int, preserveOrder bool, mapAsyncFn BiFunctionEx) GeneralStage
+	mapUsingServiceAsync(serviceFactory ServiceFactory, maxConcurrentOps int, preserveOrder bool, mapAsyncFn BiApplyFn) GeneralStage
 
 	// filterUsingService attaches a filtering stage which applies the provided predicate function to each input item to decide wh
-	filterUsingService(serviceFactory ServiceFactory, filterFn BiPredicateEx) GeneralStage
+	filterUsingService(serviceFactory ServiceFactory, filterFn BiTest) GeneralStage
 
 	// flatMapUsingService attaches a flat-mapping stage which applies the supplied function to each input item independently and emits all items from Traverser, it returns as the output items
-	flatMapUsingService(serviceFactory ServiceFactory,flatMapFn BiFunctionEx) GeneralStage
+	flatMapUsingService(serviceFactory ServiceFactory,flatMapFn BiApplyFn) GeneralStage
 
 	// rebalance returns a new stage that applies data rebalancing to the output of this stage
 	rebalance() GeneralStage
 
 	// addTimestamps add a timestamp to each item in the stream using the supplied function and specifies the allowed amount of disorder between them
-	addTimestamps(timestampFn ToLongFunctionEx, allowedLag int64) StreamStage
+	addTimestamps(timestampFn ApplyAsLongFn, allowedLag int64) StreamStage
 
 	// writeTo attaches a sink stage, one that accepts data but doesn't emit any. the supplied argument specifies what to do with the received data
 	writeTo(sink Sink) SinkStage
 
 	// peek attaches a peeking stage which logs this stage's output and passes it through without transformation
-	peek(shouldLogFn PredicateEx, toStringFn FunctionEx) GeneralStage
+	peek(shouldLogFn TestFn, toStringFn ApplyFn) GeneralStage
 
 	// customTransform attaches a stage with custom transform based on the provided supplier of Core api
 	customTransform(stageName string, procSupplier ProcessorMetaSupplier)
@@ -72,7 +72,7 @@ type BatchStage interface {
 	GeneralStage
 
 	// groupingKey ...
-	groupingKey(keyFn FunctionEx) BatchStageWithKey
+	groupingKey(keyFn ApplyFn) BatchStageWithKey
 
 	// sort attaches a stage that sorts the input items according to their natural order
 	sort() BatchStage
@@ -87,7 +87,7 @@ type StreamStage interface {
 	// merge attaches a stage that emits all the items from this stage as well as all the items from the supplied stage
 	merge(other StreamStage) StreamStage
 
-	groupingKey(keyFn FunctionEx) StreamStageWithKey
+	groupingKey(keyFn ApplyFn) StreamStageWithKey
 
 }
 
@@ -104,7 +104,7 @@ type StreamSourceStage interface {
 	withNativeTimestamps(allowedLag int64) StreamStage
 
 	// withTimestamps declare that the source will extract timestamps from the stream items
-	withTimestamps(timestampFn ToLongFunctionEx, allowedLag int64) StreamStage
+	withTimestamps(timestampFn ApplyAsLongFn, allowedLag int64) StreamStage
 
 }
 

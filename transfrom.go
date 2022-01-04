@@ -24,11 +24,11 @@ type Transform interface {
 
 	setRebalanceInput(ordinal int, value bool)
 
-	setPartitionKeyFnForInput(ordinal int, keyFn FunctionEx)
+	setPartitionKeyFnForInput(ordinal int, keyFn ApplyFn)
 
 	shouldRebalanceInput(ordinal int) bool
 
-	partitionKeyFnForInput(ordinal int) FunctionEx
+	partitionKeyFnForInput(ordinal int) ApplyFn
 
 	getUpstream() []Transform
 
@@ -44,7 +44,7 @@ type AbstractTransform struct {
 	localParallelism           int
 	determinedLocalParallelism int
 	upstreamRebalancingFlags   []bool
-	upstreamPartitionKeyFns    []FunctionEx
+	upstreamPartitionKeyFns    []ApplyFn
 }
 
 func NewAbstractTransform(name string, upstream []Transform) *AbstractTransform {
@@ -84,7 +84,7 @@ func (a *AbstractTransform) setRebalanceInput(ordinal int, value bool) {
 	a.upstreamRebalancingFlags[ordinal] = value
 }
 
-func (a *AbstractTransform) setPartitionKeyFnForInput(ordinal int, keyFn FunctionEx) {
+func (a *AbstractTransform) setPartitionKeyFnForInput(ordinal int, keyFn ApplyFn) {
 	a.upstreamPartitionKeyFns[ordinal] = keyFn
 }
 
@@ -92,7 +92,7 @@ func (a *AbstractTransform) shouldRebalanceInput(ordinal int) bool {
 	return a.upstreamRebalancingFlags[ordinal]
 }
 
-func (a *AbstractTransform) partitionKeyFnForInput(ordinal int) FunctionEx {
+func (a *AbstractTransform) partitionKeyFnForInput(ordinal int) ApplyFn {
 	return a.upstreamPartitionKeyFns[ordinal]
 }
 
@@ -152,7 +152,7 @@ func (b *BatchSourceTransform) setRebalanceInput(ordinal int, value bool) {
 	b.t.setRebalanceInput(ordinal, value)
 }
 
-func (b *BatchSourceTransform) setPartitionKeyFnForInput(ordinal int, keyFn FunctionEx) {
+func (b *BatchSourceTransform) setPartitionKeyFnForInput(ordinal int, keyFn ApplyFn) {
 	b.t.setPartitionKeyFnForInput(ordinal, keyFn)
 }
 
@@ -160,7 +160,7 @@ func (b *BatchSourceTransform) shouldRebalanceInput(ordinal int) bool {
 	return b.t.shouldRebalanceInput(ordinal)
 }
 
-func (b *BatchSourceTransform) partitionKeyFnForInput(ordinal int) FunctionEx {
+func (b *BatchSourceTransform) partitionKeyFnForInput(ordinal int) ApplyFn {
 	return b.t.partitionKeyFnForInput(ordinal)
 }
 

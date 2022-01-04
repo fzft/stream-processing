@@ -101,7 +101,7 @@ func NewPlanner(pipeline Pipeline) *Planner {
 	}
 }
 
-func (p *Planner) addEdges(transform Transform, vertex Vertex, edgeFn ConsumerFn) {
+func (p *Planner) addEdges(transform Transform, vertex Vertex, edgeFn ApplyFn) {
 	//var destOrdinal int
 	//for _, fromTransform := range transform.getUpstream() {
 	//	fromPv := p.xform2vertex[fromTransform]

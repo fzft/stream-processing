@@ -46,11 +46,11 @@ func (d *DefaultPartitioner) getPartition(item interface{}, partitionCount int) 
 }
 
 type KeyPartitioner struct {
-	keyExtractor FunctionEx
+	keyExtractor ApplyFn
 	partitioner  Partitioner
 }
 
-func NewKeyPartitioner(keyExtractor FunctionEx, partitioner Partitioner) *KeyPartitioner {
+func NewKeyPartitioner(keyExtractor ApplyFn, partitioner Partitioner) *KeyPartitioner {
 	return &KeyPartitioner{keyExtractor: keyExtractor, partitioner: partitioner}
 }
 
@@ -59,7 +59,7 @@ func (k *KeyPartitioner) init(strategy DefaultPartitionStrategy) {
 
 }
 func (k *KeyPartitioner) getPartition(item interface{}, partitionCount int) int {
-	key := k.keyExtractor.apply(item)
+	key := k.keyExtractor(item)
 	if key == nil {
 		panic("Null key from key extractor")
 	}

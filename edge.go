@@ -77,7 +77,7 @@ func (e *Edge) setPriority(priority int) *Edge {
 }
 
 // partitioned ...
-func (e *Edge) partitioned(extractKeyFn FunctionEx, partitioner Partitioner) *Edge {
+func (e *Edge) partitioned(extractKeyFn ApplyFn, partitioner Partitioner) *Edge {
 	e.routingPolicy = PARTITIONED
 	e.partitioner = NewKeyPartitioner(extractKeyFn, partitioner)
 	return e
@@ -85,7 +85,9 @@ func (e *Edge) partitioned(extractKeyFn FunctionEx, partitioner Partitioner) *Ed
 
 // allToOne ...
 func (e *Edge) allToOne(key interface{}) *Edge {
-	return e.partitioned(NewWholeItem(), NewSinglePartitioner(key))
+	return e.partitioned(func(t interface{}) interface{} {
+		return t
+	}, NewSinglePartitioner(key))
 }
 
 // broadcast ...

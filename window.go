@@ -8,7 +8,7 @@ type StageWithWindow interface {
 
 	windowDefinition() WindowDefinition
 
-	groupingKey(keyFn FunctionEx) StageWithKeyAndWindow
+	groupingKey(keyFn ApplyFn) StageWithKeyAndWindow
 }
 
 // WindowDefinition The definition of the window for a windowed aggregation operation

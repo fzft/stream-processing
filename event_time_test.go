@@ -6,6 +6,13 @@ import (
 	"time"
 )
 
+var longValueFunc = func(t interface{}) int64 {
+	if v, ok := t.(int64); ok {
+		return v
+	}
+	return 0
+}
+
 type EventTimeTest struct {
 	Lag int64
 }
@@ -28,7 +35,9 @@ func TestEventTime_smoke(t *testing.T) {
 	teardownTest, et := EventTimeTestSetup(t)
 	defer teardownTest(t)
 
-	eventTimeMapper := NewEventTimeMapper(NewEventTimePolicyNoWrapping(longValueFunc{}, newLimitingLagSupplier(et.Lag), 5, 1, 0))
+	eventTimeMapper := NewEventTimeMapper(NewEventTimePolicyNoWrapping(longValueFunc, func() interface{} {
+		return newLimitingLag(et.Lag)
+	}, 5, 1, 0))
 	eventTimeMapper.addPartitions(0, 2)
 
 	// all partitions are active initially
@@ -49,7 +58,9 @@ func TestEventTime_disabledIdleTimeout(t *testing.T) {
 	teardownTest, et := EventTimeTestSetup(t)
 	defer teardownTest(t)
 
-	eventTimeMapper := NewEventTimeMapper(NewEventTimePolicyNoWrapping(longValueFunc{}, newLimitingLagSupplier(et.Lag), 0, 1, 0))
+	eventTimeMapper := NewEventTimeMapper(NewEventTimePolicyNoWrapping(longValueFunc, func() interface{} {
+		return newLimitingLag(et.Lag)
+	}, 0, 1, 0))
 	eventTimeMapper.addPartitions(time.Now().UnixNano(), 2)
 
 	// all partitions are active initially
@@ -71,7 +82,11 @@ func TestEventTime_zeroPartitions(t *testing.T) {
 	teardownTest, et := EventTimeTestSetup(t)
 	defer teardownTest(t)
 
-	eventTimeMapper := NewEventTimeMapper(NewEventTimePolicyNoWrapping(longValueFunc{}, newLimitingLagSupplier(et.Lag), 0, 1, 0))
+	eventTimeMapper := NewEventTimeMapper(NewEventTimePolicyNoWrapping(func(t interface{}) int64 {
+		return 0
+	}, func() interface{} {
+		return newLimitingLag(et.Lag)
+	}, 0, 1, 0))
 
 	// all partitions are active initially
 	et.assertTraverser(t, eventTimeMapper.flatMapIdle(), NewWatermark(Max_Value))
@@ -88,7 +103,9 @@ func TestEventTime_when_idle_event_idle_then_twoIdleMessagesSent(t *testing.T) {
 	teardownTest, et := EventTimeTestSetup(t)
 	defer teardownTest(t)
 
-	eventTimeMapper := NewEventTimeMapper(NewEventTimePolicyNoWrapping(longValueFunc{}, newLimitingLagSupplier(et.Lag), 10, 1, 0))
+	eventTimeMapper := NewEventTimeMapper(NewEventTimePolicyNoWrapping(longValueFunc, func() interface{} {
+		return newLimitingLag(et.Lag)
+	}, 10, 1, 0))
 	eventTimeMapper.addPartitions(time.Now().UnixNano(), 1)
 	et.assertTraverser(t, eventTimeMapper.flatMapEvent(ns(0), int64(10), 0, Min_Value), NewWatermark(10-et.Lag), int64(10))
 
@@ -105,7 +122,9 @@ func TestEventTime_when_eventInOneOfTwoPartitions_then_wmAndIdleMessageForwarded
 	teardownTest, et := EventTimeTestSetup(t)
 	defer teardownTest(t)
 
-	eventTimeMapper := NewEventTimeMapper(NewEventTimePolicyNoWrapping(longValueFunc{}, newLimitingLagSupplier(et.Lag), 10, 1, 0))
+	eventTimeMapper := NewEventTimeMapper(NewEventTimePolicyNoWrapping(longValueFunc, func() interface{} {
+		return newLimitingLag(et.Lag)
+	}, 10, 1, 0))
 	eventTimeMapper.addPartitions(ns(0), 2)
 
 	et.assertTraverser(t, eventTimeMapper.flatMapEvent(ns(0), int64(10), 0, Min_Value), int64(10))
@@ -117,7 +136,9 @@ func TestEventTime_when_noTimestampFn_then_useNativeTime(t *testing.T) {
 	teardownTest, et := EventTimeTestSetup(t)
 	defer teardownTest(t)
 
-	eventTimeMapper := NewEventTimeMapper(NewEventTimePolicyNoWrapping(nil, newLimitingLagSupplier(et.Lag), 5, 1, 0))
+	eventTimeMapper := NewEventTimeMapper(NewEventTimePolicyNoWrapping(nil, func() interface{} {
+		return newLimitingLag(et.Lag)
+	}, 5, 1, 0))
 	eventTimeMapper.addPartitions(0, 1)
 
 	et.assertTraverser(t, eventTimeMapper.flatMapEvent(ns(1), int64(10), 0, 11), NewWatermark(11-et.Lag), int64(10))
@@ -128,7 +149,9 @@ func TestEventTime_when_throttlingToMaxFrame_then_noWatermarksOutput(t *testing.
 	teardownTest, et := EventTimeTestSetup(t)
 	defer teardownTest(t)
 
-	eventTimeMapper := NewEventTimeMapper(NewEventTimePolicyNoWrapping(longValueFunc{}, newLimitingLagSupplier(et.Lag), 5, 0, 0))
+	eventTimeMapper := NewEventTimeMapper(NewEventTimePolicyNoWrapping(longValueFunc, func() interface{} {
+		return newLimitingLag(et.Lag)
+	}, 5, 0, 0))
 	eventTimeMapper.addPartitions(0, 1)
 
 	et.assertTraverser(t, eventTimeMapper.flatMapEvent(ns(1), int64(-10), 0, 11), int64(-10))
@@ -139,7 +162,9 @@ func TestEventTime_when_restoredState_then_wmDoesNotGoBack(t *testing.T) {
 	teardownTest, et := EventTimeTestSetup(t)
 	defer teardownTest(t)
 
-	eventTimeMapper := NewEventTimeMapper(NewEventTimePolicyNoWrapping(longValueFunc{}, newLimitingLagSupplier(0), 5, 1, 0))
+	eventTimeMapper := NewEventTimeMapper(NewEventTimePolicyNoWrapping(longValueFunc, func() interface{} {
+		return newLimitingLag(0)
+	}, 5, 1, 0))
 	eventTimeMapper.addPartitions(0, 1)
 	eventTimeMapper.restoreWatermark(0, 10)
 
@@ -152,13 +177,48 @@ func TestEventTime_when_twoActiveQueues_theLaggingOneRemoved_then_wmForwarded(t 
 	teardownTest, et := EventTimeTestSetup(t)
 	defer teardownTest(t)
 
-	eventTimeMapper := NewEventTimeMapper(NewEventTimePolicyNoWrapping(longValueFunc{}, newLimitingLagSupplier(0), 5, 1, 0))
+	eventTimeMapper := NewEventTimeMapper(NewEventTimePolicyNoWrapping(longValueFunc, func() interface{} {
+		return newLimitingLag(0)
+	}, 5, 1, 0))
 	eventTimeMapper.addPartitions(0, 2)
 
 	et.assertTraverser(t, eventTimeMapper.flatMapEvent(ns(0), int64(10), 0, Min_Value), int64(10))
 	et.assertTraverser(t, eventTimeMapper.removePartition(ns(0), 1), NewWatermark(10))
 }
 
+func TestEventTime_when_twoActiveQueues_theAheadOneRemoved_then_noWmForwarded(t *testing.T) {
+	teardownTest, et := EventTimeTestSetup(t)
+	defer teardownTest(t)
+
+	eventTimeMapper := NewEventTimeMapper(NewEventTimePolicyNoWrapping(longValueFunc, func() interface{} {
+		return newLimitingLag(0)
+	}, 5, 1, 0))
+	eventTimeMapper.addPartitions(0, 2)
+
+	et.assertTraverser(t, eventTimeMapper.flatMapEvent(ns(0), int64(10), 0, Min_Value), int64(10))
+	et.assertTraverser(t, eventTimeMapper.flatMapEvent(ns(0), int64(11), 1, Min_Value), NewWatermark(10), int64(11))
+
+	et.assertTraverser(t, eventTimeMapper.removePartition(ns(0), 1))
+
+}
+
+func TestEventTime_when_twowhen_threePartitions_laggingOneRemoved_secondLaggingOneIdle_then_noWmForwarded(t *testing.T) {
+	teardownTest, et := EventTimeTestSetup(t)
+	defer teardownTest(t)
+
+	eventTimeMapper := NewEventTimeMapper(NewEventTimePolicyNoWrapping(longValueFunc, func() interface{} {
+		return newLimitingLag(0)
+	}, 5, 1, 0))
+	eventTimeMapper.addPartitions(0, 3)
+
+	et.assertTraverser(t, eventTimeMapper.flatMapEvent(ns(0), int64(10), 0, Min_Value), int64(10))
+	et.assertTraverser(t, eventTimeMapper.flatMapEvent(ns(1), int64(11), 1, Min_Value), int64(11))
+	et.assertTraverser(t, eventTimeMapper.flatMapEvent(ns(1), int64(12), 2, Min_Value), NewWatermark(10), int64(12))
+
+	// in this call partition0 will turn idle and partition1 is removed -> wm(12) is forward
+	et.assertTraverser(t, eventTimeMapper.removePartition(ns(5), 1), NewWatermark(12))
+
+}
 
 func ns(ms int64) int64 {
 	return time.UnixMilli(ms).UnixNano()

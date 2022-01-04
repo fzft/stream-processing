@@ -1,31 +1,6 @@
 package stream_processing
 
-// Inbox a subset of queue restricted to the consumer side
-type Inbox interface {
-	isEmpty()
 
-	// peek Retrieves, but does not remove
-	peek() interface{}
-
-	// poll Retrieves and removes the head of this inbox
-	poll() interface{}
-
-	remove()
-
-	Iter() []interface{}
-
-	clear()
-}
-
-// Outbox data sink for a Processor. the outbox consists of individual output buckets
-type Outbox interface {
-
-	// bucketCount returns the number of buckets in this outbox
-	bucketCount() int
-
-	// offer the supplied item to the bucket with the supplied ordinal
-	offer(ordinal int, item interface{})
-}
 
 // Vertex represents a unit of data processing in a computation job.
 // Vertex receives data items over its inbound Edge and pushes data items to its outbound Edge

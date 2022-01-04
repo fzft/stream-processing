@@ -9,17 +9,6 @@ type WatermarkPolicy interface {
 	getCurrentWatermark() int64
 }
 
-type limitingLagSupplier struct {
-	lag int64
-}
-
-func newLimitingLagSupplier(lag int64) *limitingLagSupplier {
-	return &limitingLagSupplier{lag: lag}
-}
-
-func (l *limitingLagSupplier) get() interface{} {
-	return newLimitingLag(l.lag)
-}
 
 // limitingLag maintains a watermark that lags behind the top observed timestamp by the given amount
 type limitingLag struct {

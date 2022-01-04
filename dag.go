@@ -23,12 +23,12 @@ func NewDAG() *DAG {
 }
 
 // newVertex creates a vertex from processor supplier and adds it to this DAG
-func (d *DAG) newVertex(name string, simpleSupplier SupplierEx) *Vertex {
+func (d *DAG) newVertex(name string, simpleSupplier GetFn) *Vertex {
 	return d.addVertex(NewVertex(name, simpleSupplier))
 }
 
 // newUniqueVertex creates a vertex from processor supplier and adds it to this DAG. the vertex will be given a unique name created from namePrefix
-func (d *DAG) newUniqueVertex(namePrefix string, simpleSupplier SupplierEx) *Vertex {
+func (d *DAG) newUniqueVertex(namePrefix string, simpleSupplier GetFn) *Vertex {
 	return d.addVertex(NewVertex(d.uniqueName(namePrefix), simpleSupplier))
 }
 

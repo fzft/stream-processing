@@ -52,7 +52,9 @@ func TestEdge_whenPartitionedByKey_thenPartitionerExtractsKey(t *testing.T) {
 	e := From(et.a, 0)
 	partitioningKey := 42
 
-	e.partitioned(NewConstantItem(partitioningKey), NewDefaultPartitioner())
+	e.partitioned(func(t interface{}) interface{} {
+		return partitioningKey
+	}, NewDefaultPartitioner())
 	partitioner := e.partitioner
 	assert.NotNil(t, partitioner)
 	partitioner.init(DefaultPartitionStrategyImpl{})
@@ -67,7 +69,9 @@ func TestEdge_whenPartitionedByCustom_thenCustomPartitioned(t *testing.T) {
 	e := From(et.a, 0)
 	partitioningKey := 42
 
-	e.partitioned(NewWholeItem(), NewTestPartitioner(partitioningKey))
+	e.partitioned(func(t interface{}) interface{} {
+		return t
+	}, NewTestPartitioner(partitioningKey))
 	partitioner := e.partitioner
 	assert.NotNil(t, partitioner)
 

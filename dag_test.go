@@ -6,12 +6,14 @@ import (
 )
 
 type DAGTest struct {
-	PROCESSOR_SUPPLIER SupplierEx
+	PROCESSOR_SUPPLIER GetFn
 }
 
 func DAGTestSetup(tb testing.TB) (func(tb testing.TB), DAGTest) {
 	et := DAGTest{}
-	et.PROCESSOR_SUPPLIER = NewNoopP()
+	et.PROCESSOR_SUPPLIER = func() interface{} {
+		return NewNoopP()
+	}
 
 	return func(tb testing.TB) {
 		tb.Log("DAGTestSetup teardown")

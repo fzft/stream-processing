@@ -10,6 +10,12 @@ const (
 	Min_Value = int64(math.MinInt64)
 )
 
+
+type MapEntry struct {
+	key   interface{}
+	value interface{}
+}
+
 func AnyMatch(streams []interface{}, matchFn func(v interface{}) bool) bool {
 	for _, v := range streams {
 		if matchFn(v) {
