@@ -145,6 +145,39 @@ type AggregateOperation2Impl struct {
 	*AggregateOperationImpl
 }
 
+// aggregateOperation2 return an aggregate operation that is a composite of two independent aggregation operations, each
+// one accepting its two own input
+func aggregateOperation2(op0, op1 AggregateOperation1, exportFinishFn BiApplyFn) AggregateOperation2 {
+	combine0 := op0.getCombineFn()
+	combine1 := op1.getCombineFn()
+	deduct0 := op0.getDeductFn()
+	deduct1 := op1.getDeductFn()
+	return NewAggregateOperationBuilder(func() interface{} {
+		return NewTuple2(op0.getCreateFn()(), op1.getCreateFn()())
+	}).andAccumulate0(func(acc, item interface{}) {
+		op0.accumulateFn0()(acc.(Tuple2).f0, item)
+	}).andAccumulate1(func(acc, item interface{}) {
+		op1.accumulateFn0()(acc.(Tuple2).f1, item)
+	}).andCombine(func(acc1, acc2 interface{}) {
+		if combine0 == nil || combine1 == nil {
+		} else {
+			combine0(acc1.(Tuple2).f0, acc2.(Tuple2).f0)
+			combine1(acc1.(Tuple2).f1, acc2.(Tuple2).f1)
+		}
+	}).andDeduct(func(acc1, acc2 interface{}) {
+		if deduct0 == nil || deduct1 == nil {
+		} else {
+			deduct0(acc1.(Tuple2).f0, acc2.(Tuple2).f0)
+			deduct1(acc1.(Tuple2).f1, acc2.(Tuple2).f1)
+		}
+	}).andExport(func(acc interface{}) interface{} {
+		return exportFinishFn(op0.getExportFn()(acc.(Tuple2).f0), op1.getExportFn()(acc.(Tuple2).f1))
+	}).andFinish(func(acc interface{}) interface{} {
+		return exportFinishFn(op0.getExportFn()(acc.(Tuple2).f0), op1.getExportFn()(acc.(Tuple2).f1))
+	})
+
+}
+
 func NewAggregateOperation2Impl(createFn GetFn, combineFn BiAcceptFn, deductFn BiAcceptFn, exportFn ApplyFn, finishFn ApplyFn, accumulateFns ...BiAcceptFn) *AggregateOperation2Impl {
 	a := new(AggregateOperation2Impl)
 	a.AggregateOperationImpl = new(AggregateOperationImpl)
@@ -176,6 +209,46 @@ func (a *AggregateOperation2Impl) accumulateFn1() BiAcceptFn {
 
 type AggregateOperation3Impl struct {
 	*AggregateOperationImpl
+}
+
+// aggregateOperation3 return an aggregate operation that is a composite of two independent aggregation operations, each
+// one accepting its two own input
+func aggregateOperation3(op0, op1, op2 AggregateOperation1, exportFinishFn TriApplyFn) AggregateOperation3 {
+	combine0 := op0.getCombineFn()
+	combine1 := op1.getCombineFn()
+	combine2 := op2.getCombineFn()
+	deduct0 := op0.getDeductFn()
+	deduct1 := op1.getDeductFn()
+	deduct2 := op1.getDeductFn()
+	return NewAggregateOperationBuilder(func() interface{} {
+		return NewTuple3(op0.getCreateFn()(), op1.getCreateFn()(), op2.getCreateFn()())
+	}).andAccumulate0(func(acc, item interface{}) {
+		op0.accumulateFn0()(acc.(Tuple3).f0, item)
+	}).andAccumulate1(func(acc, item interface{}) {
+		op1.accumulateFn0()(acc.(Tuple3).f1, item)
+	}).andAccumulate2(func(acc, item interface{}) {
+		op1.accumulateFn0()(acc.(Tuple3).f2, item)
+	}).
+		andCombine(func(acc1, acc2 interface{}) {
+			if combine0 == nil || combine1 == nil || combine2 == nil {
+			} else {
+				combine0(acc1.(Tuple3).f0, acc2.(Tuple3).f0)
+				combine1(acc1.(Tuple3).f1, acc2.(Tuple3).f1)
+				combine2(acc1.(Tuple3).f2, acc2.(Tuple3).f1)
+			}
+		}).andDeduct(func(acc1, acc2 interface{}) {
+		if deduct0 == nil || deduct1 == nil || deduct2 == nil {
+		} else {
+			deduct0(acc1.(Tuple3).f0, acc2.(Tuple3).f0)
+			deduct1(acc1.(Tuple3).f1, acc2.(Tuple3).f1)
+			deduct2(acc1.(Tuple3).f2, acc2.(Tuple3).f2)
+		}
+	}).andExport(func(acc interface{}) interface{} {
+		return exportFinishFn(op0.getExportFn()(acc.(Tuple3).f0), op1.getExportFn()(acc.(Tuple3).f1), op1.getExportFn()(acc.(Tuple3).f2))
+	}).andFinish(func(acc interface{}) interface{} {
+		return exportFinishFn(op0.getExportFn()(acc.(Tuple3).f0), op1.getExportFn()(acc.(Tuple3).f1), op1.getExportFn()(acc.(Tuple3).f2))
+	})
+
 }
 
 func NewAggregateOperation3Impl(createFn GetFn, combineFn BiAcceptFn, deductFn BiAcceptFn, exportFn ApplyFn, finishFn ApplyFn, accumulateFns ...BiAcceptFn) *AggregateOperation3Impl {
@@ -220,8 +293,18 @@ func NewAggregateOperationBuilder(createFn GetFn) *AggregateOperationBuilder {
 	return &AggregateOperationBuilder{createFn: createFn}
 }
 
+// andAccumulate register the AggregateOperation1 accumulate primitive
 func (b *AggregateOperationBuilder) andAccumulate(accumulateFn BiAcceptFn) *Arity1 {
 	return NewArity1(b.createFn, accumulateFn)
+}
+
+func (b *AggregateOperationBuilder) andAccumulate0(accumulateFn0 BiAcceptFn) *Arity1 {
+	return NewArity1(b.createFn, accumulateFn0)
+}
+
+// varArity selects the variable-arity variant for this aggregate operation builder
+func (b *AggregateOperationBuilder) varArity() *VarArity {
+	return NewVarArity(b.createFn)
 }
 
 type Arity1 struct {
@@ -393,12 +476,54 @@ func (a *VarArity) packAccumulateFns() []BiAcceptFn {
 	return fns
 }
 
+// counting returns an aggregate operation that counts the items it observes .
+// the result is of type long
+func counting() AggregateOperation1 {
+	return NewAggregateOperationBuilder(func() interface{} {
+		return NewLongAccumulator()
+	}).
+		andAccumulate(func(t, u interface{}) {
+			t.(*LongAccumulator).addAllowingOverflow(1)
+		}).
+		andCombine(func(t, u interface{}) {
+			t.(*LongAccumulator).addAllowingOverflowWithAnother(u.(*LongAccumulator))
+		}).
+		andDeduct(func(t, u interface{}) {
+			t.(*LongAccumulator).subtractAllowingOverflowWithAnother(u.(*LongAccumulator))
+		}).
+		andExportFinish(func(t interface{}) interface{} {
+			return t.(*LongAccumulator).get()
+		})
+}
+
+// summingLong return an aggregate operation that computes the sum of the long values
+// it obtains by applying getLongValueFn to each item
 func summingLong(getLongValueFn ApplyAsLongFn) AggregateOperation1 {
 	return NewAggregateOperationBuilder(func() interface{} {
 		return NewLongAccumulator()
 	}).
 		andAccumulate(func(t, u interface{}) {
 			t.(*LongAccumulator).addAllowingOverflow(getLongValueFn(u))
+		}).
+		andCombine(func(t, u interface{}) {
+			t.(*LongAccumulator).addAllowingOverflowWithAnother(u.(*LongAccumulator))
+		}).
+		andDeduct(func(t, u interface{}) {
+			t.(*LongAccumulator).subtractAllowingOverflowWithAnother(u.(*LongAccumulator))
+		}).
+		andExportFinish(func(t interface{}) interface{} {
+			return t.(*LongAccumulator).get()
+		})
+}
+
+// summingDouble return an aggregate operation that computes the sum of the float values
+// it obtains by applying getLongValueFn to each item
+func summingDouble(getDoubleValueFn ApplyAsLongFn) AggregateOperation1 {
+	return NewAggregateOperationBuilder(func() interface{} {
+		return NewLongAccumulator()
+	}).
+		andAccumulate(func(t, u interface{}) {
+			t.(*LongAccumulator).addAllowingOverflow(getDoubleValueFn(u))
 		}).
 		andCombine(func(t, u interface{}) {
 			t.(*LongAccumulator).addAllowingOverflowWithAnother(u.(*LongAccumulator))

@@ -1,6 +1,6 @@
 package stream_processing
 
-// LongAccumulator mutable container of  int64 value
+// LongAccumulator mutable container of int64 value
 type LongAccumulator struct {
 	value int64
 }
@@ -40,3 +40,8 @@ func (a *LongAccumulator) subtractAllowingOverflowWithAnother(that *LongAccumula
 	a.value -= that.value
 	return a
 }
+
+type DoubleAccumulator struct {
+	value float64
+}
+
